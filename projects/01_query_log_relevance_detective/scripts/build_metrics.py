@@ -12,6 +12,7 @@ con.execute("""
 CREATE OR REPLACE TABLE search_events_sess AS
 WITH base AS (
   SELECT
+    event_id,
     user_id,
     query_id,
     query_norm,
@@ -33,11 +34,14 @@ flags AS (
 numbered AS (
   SELECT
     *,
-    SUM(new_sess) OVER (PARTITION BY user_id ORDER BY ts
-      ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS sess_num
+    SUM(new_sess) OVER (
+      PARTITION BY user_id ORDER BY ts
+      ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS sess_num
   FROM flags
 )
 SELECT
+  event_id,
   user_id,
   query_id,
   query_norm,
@@ -48,18 +52,21 @@ SELECT
 FROM numbered;
 """)
 
-# 2) Per-query click features (clicked? best rank? reciprocal rank)
+# 2) Per-event click features (clicked? best rank? reciprocal rank)
 con.execute("""
 CREATE OR REPLACE VIEW query_click_features AS
 SELECT
-  se.query_id,
+  se.event_id,
   MIN(ce.rank) AS best_click_rank,
-  CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END AS has_click,
-  CASE WHEN COUNT(*) > 0 THEN 1.0 / MIN(ce.rank) ELSE NULL END AS rr
+  CASE WHEN COUNT(ce.doc_id) > 0 THEN 1 ELSE 0 END AS has_click,
+  CASE WHEN COUNT(ce.doc_id) > 0
+    THEN 1.0 / CASE WHEN MIN(ce.rank) = 0 THEN 1 ELSE MIN(ce.rank) END
+    ELSE NULL
+  END AS rr
 FROM search_events se
 LEFT JOIN click_events ce
-  ON se.query_id = ce.query_id
-GROUP BY se.query_id;
+  ON se.event_id = ce.event_id
+GROUP BY se.event_id;
 """)
 
 # 3) Session metrics: no-click + possible reformulation
@@ -78,7 +85,7 @@ c AS (
     se.session_id,
     MAX(qcf.has_click) AS has_click_any
   FROM search_events_sess se
-  JOIN query_click_features qcf ON se.query_id = qcf.query_id
+  JOIN query_click_features qcf ON se.event_id = qcf.event_id
   GROUP BY se.session_id
 )
 SELECT
@@ -91,37 +98,48 @@ FROM q
 JOIN c USING (session_id);
 """)
 
-# 4) Daily KPIs (portfolio table #1)
+# 4) Daily KPIs (portfolio table #1) - SAFE aggregation (no row explosion)
 daily = con.execute("""
-WITH per_query AS (
+WITH per_query_day AS (
   SELECT
     DATE_TRUNC('day', se.ts) AS day,
-    qcf.has_click,
-    qcf.rr
+    COUNT(*) AS queries,
+    AVG(qcf.has_click) AS ctr,
+    AVG(qcf.rr) AS mrr
   FROM search_events_sess se
-  JOIN query_click_features qcf ON se.query_id = qcf.query_id
+  JOIN query_click_features qcf ON se.event_id = qcf.event_id
+  WHERE se.query_norm IS NOT NULL AND length(trim(se.query_norm)) > 0
+  GROUP BY 1
 ),
-per_session AS (
+per_session_day AS (
   SELECT
     DATE_TRUNC('day', MIN(se.ts)) AS day,
-    MAX(sm.no_click_session) AS no_click_session,
-    MAX(sm.possible_reformulation) AS possible_reformulation
+    COUNT(*) AS sessions,
+    AVG(sm.no_click_session) AS no_click_rate,
+    AVG(sm.possible_reformulation) AS possible_reformulation_rate
   FROM search_events_sess se
   JOIN session_metrics sm ON se.session_id = sm.session_id
   GROUP BY sm.session_id
 )
 SELECT
-  pq.day,
-  COUNT(*) AS queries,
-  AVG(pq.has_click) AS ctr,
-  AVG(pq.rr) AS mrr,
-  AVG(ps.no_click_session) AS no_click_rate,
-  AVG(ps.possible_reformulation) AS possible_reformulation_rate
-FROM per_query pq
-JOIN per_session ps USING (day)
-GROUP BY pq.day
-ORDER BY pq.day;
+  q.day,
+  q.queries,
+  q.ctr,
+  q.mrr,
+  s.no_click_rate,
+  s.possible_reformulation_rate
+FROM per_query_day q
+LEFT JOIN (
+  SELECT
+    day,
+    AVG(no_click_rate) AS no_click_rate,
+    AVG(possible_reformulation_rate) AS possible_reformulation_rate
+  FROM per_session_day
+  GROUP BY day
+) s USING (day)
+ORDER BY q.day;
 """).df()
+
 daily.to_csv(OUTDIR / "daily_kpis.csv", index=False)
 
 # 5) Top “bad queries” (portfolio table #2)
@@ -133,7 +151,8 @@ WITH per_query AS (
     AVG(qcf.has_click) AS ctr,
     AVG(qcf.rr) AS mrr
   FROM search_events_sess se
-  JOIN query_click_features qcf ON se.query_id = qcf.query_id
+  JOIN query_click_features qcf ON se.event_id = qcf.event_id
+  WHERE se.query_norm IS NOT NULL AND length(trim(se.query_norm)) > 0
   GROUP BY se.query_norm
 )
 SELECT *
@@ -142,6 +161,7 @@ WHERE q_count >= 20
 ORDER BY ctr ASC, q_count DESC
 LIMIT 200;
 """).df()
+
 bad.to_csv(OUTDIR / "top_bad_queries.csv", index=False)
 
 print("Wrote:", OUTDIR / "daily_kpis.csv")
