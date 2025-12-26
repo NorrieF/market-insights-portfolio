@@ -10,7 +10,7 @@ Use query logs + click signals to surface search pain points, quantify impact, a
 
 ## Tables
 - `search_events`: one row per search event (keyed by `event_id`)
-- `click_events`: one row per click (joined to searches by `event_id`)
+- `click_events`: one row per clicked item (multiple rows can map to the same `event_id`)
 - `search_events_sess`: searches sessionized by 30-min inactivity gap per user
 
 ## Metrics (proxies)
@@ -53,24 +53,30 @@ Note: the dataset includes clicks (rank of clicked items), but does **not** incl
   Interpretation: rough proxy for users re-trying queries; lower is generally better.  
   (Caveat: multiple distinct queries can also reflect multi-intent browsing, not only reformulation.)
 
-### “Worst Performing Queries” Table (bottom right)
-- Shows **high-volume queries** (default: `q_count >= 20`) ranked by lowest CTR (proxy) first.
-- Columns:
-  - `Q Count`: number of occurrences of the normalized query in the sample
-  - `CTR`: avg(has_click) for that query
-  - `MRR`: avg(rr) for that query (NULL if no clicks recorded)
+### Query Plot (bottom right)
+- Shows **high-volume queries** (default: `q_count >= 20`) scattered by the following metrics:
+  - `Count (size)`: number of occurrences of the normalized query in the sample
+  - `CTR (vertical axis)`: avg(has_click) for that query
+  - `MRR (horizontal axis, color)`: avg(rr) for that query (NULL if no clicks recorded)
 
-### Important caveats
-- **CTR here is not “clicks / impressions”**. It is “% of searches with any click.”  
-- **`query_id` in AOL-IA behaves like a query-hash key** and can repeat across many search events; metrics are joined via `event_id` (one per search event).
+## Limitations
+- CTR is a click-presence proxy (no impression lists), so it should be interpreted as “% of searches with any click,” not clicks/impressions.
+- Sessionization uses a simple 30-minute inactivity rule; multi-intent browsing can be misinterpreted as “reformulation.”
 
 ## Findings
-- A sharp decline of daily CTR observed on April 13 may indicate poor performance of a new search algorithm employed for a popular web browser, which would have been fixed in a day.
-- Daily MRR also dropped significantly on April 13 as well, corroborating the suspicion of the algorithmic decay: users either did not click on the results or had to scroll further down than usual.
-- No Click Rate shows an obvious negative correlation with daily CTR across the period: most of the 30 min sessions consisted of a single search.
-- 
+- CTR and MRR drop sharply on **2006-04-13** (day-level anomaly).
+- No-click session rate is strongly negatively correlated with CTR in this sample because most 30-minute sessions contain a single search (so session-level “no click” approximates 1 − CTR).
+
+## Recommendations (mock)
+- Validate instrumentation on **2006-04-13**:
+  - compare click-event volume vs search-event volume by hour,
+  - check whether clicked ranks/doc_ids are missing or malformed that day.
+- Segment the anomaly:
+  - identify which query clusters (navigational/URL-like vs entity queries) account for most of the CTR/MRR drop.
+- If the issue is logging/instrumentation, backfill or correct the pipeline and re-run the daily KPIs; if it’s behavioral/query-mix, create a query-classifier and monitor mix shifts over time.
 
 ## How to run
 ```bash
 uv run python projects/01_query_log_relevance_detective/scripts/etl_aol_ia.py --limit 200000
 uv run python projects/01_query_log_relevance_detective/scripts/build_metrics.py
+```

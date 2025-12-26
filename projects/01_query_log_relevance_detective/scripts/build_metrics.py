@@ -142,51 +142,7 @@ ORDER BY q.day;
 
 daily.to_csv(OUTDIR / "daily_kpis.csv", index=False)
 
-# 5) Top “bad queries” (portfolio table #2)
-bad = con.execute("""
-WITH per_query AS (
-  SELECT
-    se.query_norm,
-    COUNT(*) AS q_count,
-    AVG(qcf.has_click) AS ctr,
-    AVG(qcf.rr) AS mrr
-  FROM search_events_sess se
-  JOIN query_click_features qcf ON se.event_id = qcf.event_id
-  WHERE se.query_norm IS NOT NULL AND length(trim(se.query_norm)) > 0
-  GROUP BY se.query_norm
-)
-SELECT *
-FROM per_query
-WHERE q_count >= 20
-ORDER BY ctr ASC, q_count DESC
-LIMIT 200;
-""").df()
-
-bad.to_csv(OUTDIR / "top_bad_queries.csv", index=False)
-
-# 6) Top “good queries” (portfolio table #3)
-good = con.execute("""
-WITH per_query AS (
-  SELECT
-    se.query_norm,
-    COUNT(*) AS q_count,
-    AVG(qcf.has_click) AS ctr,
-    AVG(qcf.rr) AS mrr
-  FROM search_events_sess se
-  JOIN query_click_features qcf ON se.event_id = qcf.event_id
-  WHERE se.query_norm IS NOT NULL AND length(trim(se.query_norm)) > 0
-  GROUP BY se.query_norm
-)
-SELECT *
-FROM per_query
-WHERE q_count >= 20
-ORDER BY ctr DESC, mrr DESC NULLS LAST, q_count DESC
-LIMIT 200;
-""").df()
-
-good.to_csv(OUTDIR / "top_good_queries.csv", index=False)
-
-# 7) All queries (portfolio table #4)
+# 6) Query Plot (portfolio table #4)
 allq = con.execute("""
 WITH per_query AS (
   SELECT
@@ -205,30 +161,5 @@ WHERE q_count >= 20;
 """).df()
 
 allq.to_csv(OUTDIR / "per_query_all.csv", index=False)
-
-# 8) Per-day queries (portfolio table #5)
-day='2006-04-13'
-per_day = con.execute(f'''
-WITH per_query AS (
-  SELECT
-    se.query_norm,
-    COUNT(*) AS q_count,
-    AVG(qcf.has_click) AS ctr,
-    AVG(qcf.rr) AS mrr
-  FROM search_events_sess se
-  JOIN query_click_features qcf
-    ON se.event_id = qcf.event_id
-  WHERE DATE(se.ts) = DATE '{day}'
-    AND se.query_norm IS NOT NULL
-    AND length(trim(se.query_norm)) > 0
-  GROUP BY se.query_norm
-)
-SELECT *
-FROM per_query
-WHERE q_count >= 1
-''').df()
-
-per_day.to_csv(OUTDIR / f'per_query_{day}.csv', index=False)
-
 
 print("Done.")
