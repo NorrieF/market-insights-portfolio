@@ -55,7 +55,7 @@ def main() -> None:
     con = duckdb.connect(str(db_path))
 
     # Schema + indexes (from SQL file at ../sql relative to this script)
-    con.execute(read_sql(__file__, "00_schema.sql"))
+    con.execute(read_sql(__file__, "schema.sql"))
 
     dataset = ir_datasets.load("aol-ia")
 

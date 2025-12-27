@@ -35,7 +35,7 @@ def main() -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
     con = duckdb.connect(str(db_path))
-    con.execute(read_sql(__file__, "00_schema.sql"))
+    con.execute(read_sql(__file__, "schema_core.sql"))
 
     # Reset (keeps reruns clean)
     con.execute("DELETE FROM docs;")

@@ -16,14 +16,14 @@ def main() -> None:
     con = duckdb.connect(str(db_path))
 
     # SQL lives in ../sql relative to this script, so read_sql(__file__, ...) works
-    con.execute(read_sql(__file__, "01_sessionize.sql"))
-    con.execute(read_sql(__file__, "02_query_click_features.sql"))
-    con.execute(read_sql(__file__, "03_session_metrics.sql"))
+    con.execute(read_sql(__file__, "sessionize.sql"))
+    con.execute(read_sql(__file__, "query_click_features.sql"))
+    con.execute(read_sql(__file__, "session_metrics.sql"))
 
-    daily = con.execute(read_sql(__file__, "04_daily_kpis.sql")).df()
+    daily = con.execute(read_sql(__file__, "daily_kpis.sql")).df()
     daily.to_csv(outdir / "daily_kpis.csv", index=False)
 
-    allq = con.execute(read_sql(__file__, "05_per_query_all.sql")).df()
+    allq = con.execute(read_sql(__file__, "per_query_all.sql")).df()
     allq.to_csv(outdir / "per_query_all.csv", index=False)
 
     print("Done.")
