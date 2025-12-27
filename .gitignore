@@ -7,5 +7,5 @@ __pycache__/
 # Data: keep raw downloads out of git
 data/raw/
 data/external/
-data/local.duckdb
+data/*.duckdb
 projects/**/outputs/*csv
