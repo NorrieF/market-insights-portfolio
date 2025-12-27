@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime
+from pathlib import Path
 from typing import List, Tuple
 
 import duckdb
 import ir_datasets
 from tqdm import tqdm
+
+from shared.scripts.repo_paths import read_sql, repo_root
 
 
 SearchRow = Tuple[int, str, str, str, str, datetime]
@@ -37,41 +40,22 @@ def flush(con: duckdb.DuckDBPyConnection, searches: List[SearchRow], clicks: Lis
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", default="data/local.duckdb", help="DuckDB path")
+    ap.add_argument("--db", default="data/local.duckdb", help="DuckDB path (repo-relative unless absolute)")
     ap.add_argument("--limit", type=int, default=200_000, help="Number of qlog rows to ingest (sample)")
     ap.add_argument("--batch", type=int, default=10_000, help="Insert batch size")
     args = ap.parse_args()
 
-    con = duckdb.connect(args.db)
+    ROOT = repo_root(__file__)
 
-    # Minimal schema
-    con.execute(
-        """
-        CREATE TABLE IF NOT EXISTS search_events (
-          event_id BIGINT,
-          user_id    VARCHAR,
-          query_id   VARCHAR,
-          query_norm VARCHAR,
-          query_orig VARCHAR,
-          ts         TIMESTAMP
-        );
-        """
-    )
-    con.execute(
-        """
-        CREATE TABLE IF NOT EXISTS click_events (
-          event_id BIGINT,
-          user_id  VARCHAR,
-          query_id VARCHAR,
-          doc_id   VARCHAR,
-          rank     INTEGER
-        );
-        """
-    )
+    # Resolve DB path safely (works no matter where you run the script from)
+    db_arg = Path(args.db)
+    db_path = db_arg if db_arg.is_absolute() else (ROOT / db_arg)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # (Optional) indexes to speed up later analysis
-    con.execute("CREATE INDEX IF NOT EXISTS idx_search_user_ts ON search_events(user_id, ts);")
-    con.execute("CREATE INDEX IF NOT EXISTS idx_click_event ON click_events(event_id);")
+    con = duckdb.connect(str(db_path))
+
+    # Schema + indexes (from SQL file at ../sql relative to this script)
+    con.execute(read_sql(__file__, "00_schema.sql"))
 
     dataset = ir_datasets.load("aol-ia")
 
@@ -82,7 +66,6 @@ def main() -> None:
     event_id = 0
 
     for qlog in tqdm(dataset.qlogs_iter(), total=args.limit):
-        # qlog fields (per ir_datasets docs): event_id, user_id, query_id, query, query_orig, time, items :contentReference[oaicite:2]{index=2}
         event_id += 1
         user_id = qlog.user_id
         query_id = qlog.query_id
@@ -92,7 +75,6 @@ def main() -> None:
 
         searches.append((event_id, user_id, query_id, query_norm, query_orig, ts))
 
-        # items include doc_id, rank, clicked (bool); keep only clicked results
         for item in qlog.items:
             if item.clicked:
                 clicks.append((event_id, user_id, query_id, item.doc_id, item.rank))
@@ -106,10 +88,9 @@ def main() -> None:
 
     flush(con, searches, clicks)
 
-    # Quick summary
     se = con.execute("SELECT COUNT(*) FROM search_events").fetchone()[0]
     ce = con.execute("SELECT COUNT(*) FROM click_events").fetchone()[0]
-    print(f"Done. search_events={se:,} click_events={ce:,} db={args.db}")
+    print(f"Done. search_events={se:,} click_events={ce:,} db={db_path}")
 
 
 if __name__ == "__main__":
