@@ -134,3 +134,4 @@ This repo is a portfolio project for roles involving:
 - market insights,
 - search/recommendation quality analysis,
 - human evaluation and LLM evaluation workflows.
+My LinkedIn: https://www.linkedin.com/in/norikazu-furukawa-a6215729/
