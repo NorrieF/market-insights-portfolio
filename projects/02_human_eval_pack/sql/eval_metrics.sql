@@ -47,7 +47,8 @@ SELECT
     WHEN best_rank IS NULL THEN 0.0
     ELSE 1.0 / best_rank
   END AS mrr_at_10
-FROM eval_base;
+FROM eval_base
+ORDER BY CAST(query_id AS INTEGER);
 
 -- Overall summary
 CREATE OR REPLACE TABLE eval_summary AS
