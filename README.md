@@ -106,12 +106,17 @@ uv run python projects/01_query_log_relevance_detective/scripts/etl_aol_ia.py --
 uv run python projects/01_query_log_relevance_detective/scripts/build_metrics.py
 ```
 
-### 3. Run Project 2 pipeline (SciFact test split)
+### 3. Run Project 2 pipeline
 ```bash
-uv run python projects/02_human_eval_pack/scripts/etl_beir_scifact.py --split test
+uv run python projects/02_human_eval_pack/scripts/etl_beir_scifact.py
 uv run python projects/02_human_eval_pack/scripts/init_eval_tables.py
+uv run python projects/02_human_eval_pack/scripts/init_ollama_tables.py
 uv run python projects/02_human_eval_pack/scripts/build_candidates.py
+uv run python projects/02_human_eval_pack/scripts/build_judge_set.py
+uv run python projects/02_human_eval_pack/scripts/build_judge_items_for_llm.py
 uv run python projects/02_human_eval_pack/scripts/eval_metrics.py
+uv run python projects/02_human_eval_pack/scripts/run_ollama_judge.py --model llama3.1:8b
+uv run python projects/02_human_eval_pack/scripts/export_inspection_rows.py
 ```
 Note: output CSVs are typically gitignored. Each outputs/ folder includes a `.gitkeep` so the folder exists for new clones.
 
