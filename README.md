@@ -12,20 +12,15 @@ Each project uses real public datasets and produces:
 
 ---
 
-## What this repo demonstrates
+## Skills Demonstrated
 
-### ✅ Practical data analysis skills
+### ✅ Practical data analysis
 - SQL + Python pipelines
 - DuckDB as a lightweight analytics warehouse
 - Metric design and careful proxy definitions (when raw impressions aren’t available)
 - Reproducible outputs (CSV exports for Tableau/BI)
 
-### ✅ Search quality / relevance evaluation thinking
-- Sessionization, click-based KPIs, per-query analysis
-- Separating “what we can measure” from “what we wish we had”
-- Human-labeled ground truth (qrels) from IR benchmarks (BEIR)
-
-### ✅ LLM evaluation workflows (Project 2 planned extension)
+### ✅ LLM evaluation workflows
 - Using human judgments as ground truth
 - Candidate generation + evaluation loop
 - A clear slot to plug in an LLM-as-judge and compare against humans
@@ -78,11 +73,11 @@ market-insights-portfolio/
 ---
 
 ### Project 2: Human Eval Pack (BEIR SciFact)
-**Goal:** Build an evaluation loop using a dataset with **human relevance judgments (qrels)**:
-- load benchmark dataset (docs, queries, qrels),
-- generate candidate rankings (BM25-style baseline via DuckDB FTS),
+**Goal:** Build a reproducible evaluation loop that compares human relevance labels with an LLM judge:
+- load the benchmark dataset (documents, queries, human labels),
+- build a per-query candidate pool (BM25 via DuckDB full-text search),
 - compute retrieval metrics (Recall@10, MRR@10),
-- (next) compare LLM-as-judge against human qrels.
+- run an Ollama model to judge relevance on the same pool and compare outputs.
 
 ➡️ See: `projects/02_human_eval_pack/README.md`
 
