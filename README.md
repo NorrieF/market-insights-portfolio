@@ -66,7 +66,7 @@ market-insights-portfolio/
 - Click-based proxy metrics (CTR proxy, MRR, no-click sessions, possible reformulation)
 - Tableau dashboard published to Tableau Public
 
-➡️ See: [!projects/01_query_log_relevance_detective/README.md](https://github.com/NorrieF/market-insights-portfolio/blob/main/projects/01_query_log_relevance_detective/README.md)
+➡️ See: [projects/01_query_log_relevance_detective/README.md](https://github.com/NorrieF/market-insights-portfolio/blob/main/projects/01_query_log_relevance_detective/README.md)
 
 ---
 
@@ -77,7 +77,7 @@ market-insights-portfolio/
 - compute retrieval metrics (Recall@10, MRR@10),
 - run an Ollama model to judge relevance on the same pool and compare outputs.
 
-➡️ See: [!projects/02_human_eval_pack/README.md](https://github.com/NorrieF/market-insights-portfolio/blob/main/projects/02_human_eval_pack/README.md)
+➡️ See: [projects/02_human_eval_pack/README.md](https://github.com/NorrieF/market-insights-portfolio/blob/main/projects/02_human_eval_pack/README.md)
 
 ---
 
