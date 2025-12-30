@@ -4,8 +4,8 @@
 
 This project uses **BEIR / SciFact**, which is a public benchmark for **scientific claim verification** and **information retrieval**.
 
-Even though we talk about “queries” and “documents,” this is *not* web search.  
-Think: **short scientific statements (claims)** + **paper abstracts** + **human judgments** about whether a paper supports/refutes a claim.
+Even though we talk about “queries” and “documents”, this is *not* web search.
+The data consists of **short scientific statements (claims)** + **paper abstracts** + **human judgments of their relevance**:
 
 ### 1) Queries = scientific claims
 Each “query” is a short sentence that reads like a claim someone might make in a paper or discussion.
@@ -19,8 +19,8 @@ In our database:
 
 ### 2) Documents = paper titles + abstracts
 Each “doc” is a scientific paper entry, typically:
-- a **title**
-- an **abstract** (or abstract-like text)
+- A **title**
+- An **abstract** (or abstract-like text)
 
 Example (doc):
 - title: `ADAR1 Forms a Complex with Dicer to Promote MicroRNA Processing...`
@@ -60,23 +60,23 @@ Then we create a denormalized view for Ollama prompts:
 
 ### 5) What Ollama outputs
 For each query, we tell Ollama:
-- the claim (query_text)
-- the `K` candidate docs (title + abstract text)
+- The claim (query_text)
+- The `K` candidate docs (title + abstract text)
 - `n_rel` = how many docs humans labeled relevant for that query
 
 Ollama must return exactly `n_rel` **slots** (which docs it thinks are relevant).
 We store that as:
 - `ollama_picks(query_id, doc_id, slot, model, prompt_v, created_at)`
 
-### Mental model (one sentence)
+### Mental model
 **Humans label which abstracts are relevant to a claim; BM25 builds a small pool; Ollama tries to pick the same “relevant evidence” from that pool, and we analyze where they agree or disagree.**
 In short,
-**load labeled data → build a candidate pool → compare judges → surface disagreements → (optionally) adjudicate**
+**load labeled data → build a candidate pool → have LLM label relevance → compare human & LLM judges → adjudicate**
 > SciFact includes benchmark splits like `train`/`test`. Here we use the **test split for evaluation**. The split naming is benchmark protocol, not ML training.
 
 ---
 
-## Goal
+## Process
 1) Load a dataset with **human relevance judgments**
 2) Build a **candidate pool per query** that contains:
    - **all known human-labeled relevant docs**, plus

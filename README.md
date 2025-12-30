@@ -50,8 +50,6 @@ market-insights-portfolio/
       outputs/                  # CSV outputs (gitignored, folder kept)
       reports/
       README.md
-    03_data_quality_bouncer/
-      ... (planned)
   shared/                       # shared helpers (paths, SQL loaders, etc.)
   pyproject.toml                # dependencies
   .gitignore
@@ -82,14 +80,6 @@ market-insights-portfolio/
 ➡️ See: `projects/02_human_eval_pack/README.md`
 
 ---
-
-### Project 3: Data Quality Bouncer (planned)
-**Goal:** Create automated QA checks + scorecards for catalog/metadata quality and show how data issues translate into search/reco quality issues.
-
-Planned deliverables:
-- rule-based validations + anomaly detection
-- “data quality scorecard” + bug template engineers can use
-- trend outputs and a lightweight dashboard
 
 ## Quickstart
 
