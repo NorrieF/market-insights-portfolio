@@ -18,7 +18,6 @@ def main() -> None:
 
     con = duckdb.connect(str(db_path))
 
-    # Core tables should already exist from ETL, but running again is harmless
     con.execute(read_sql(__file__, "schema_core.sql"))
     con.execute(read_sql(__file__, "schema_eval.sql"))
 

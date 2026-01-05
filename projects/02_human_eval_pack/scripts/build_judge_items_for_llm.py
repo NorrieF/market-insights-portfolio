@@ -9,7 +9,6 @@ from shared.scripts.repo_paths import repo_root, read_sql
 
 
 def run_sql_script(con: duckdb.DuckDBPyConnection, sql: str) -> None:
-    # simple splitter is fine here (SQL file has no semicolons inside strings)
     for stmt in (s.strip() for s in sql.split(";")):
         if stmt:
             con.execute(stmt)
@@ -27,7 +26,6 @@ def main() -> None:
 
     con = duckdb.connect(str(db_path))
 
-    # Build table (snapshot)
     sql = read_sql(__file__, "build_judge_items_for_llm.sql")
     run_sql_script(con, sql)
 

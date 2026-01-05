@@ -54,7 +54,6 @@ def main() -> None:
         for rank, (doc_id, _score) in enumerate(rows, start=1):
             insert_rows.append((str(query_id), str(doc_id), int(rank), "bm25"))
 
-    # No conditional: just run it (executemany with an empty list is fine)
     con.executemany(
         "INSERT INTO candidates(query_id, doc_id, rank, source) VALUES (?, ?, ?, ?)",
         insert_rows,

@@ -9,7 +9,6 @@ from shared.scripts.repo_paths import repo_root, read_sql
 
 
 def run_sql_script(con: duckdb.DuckDBPyConnection, sql: str) -> None:
-    # simple splitter is fine (no semicolons inside strings in our SQL files)
     for stmt in (s.strip() for s in sql.split(";")):
         if stmt:
             con.execute(stmt)

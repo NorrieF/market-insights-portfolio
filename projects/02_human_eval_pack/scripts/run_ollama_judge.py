@@ -32,7 +32,6 @@ def build_prompt(query_text: str, n_rel: int, rows: List[Row], text_chars: int) 
         text = clip(text or "", text_chars)
         lines.append(f"{slot}. {title}\n   {text}")
 
-    # Keep it explicit, keep it simple, keep it machine-checkable.
     return (
         "You are judging relevance between a scientific claim and paper abstracts.\n\n"
         f"CLAIM (query): {query_text}\n\n"
@@ -61,7 +60,6 @@ def parse_slots_loose(out: str, topk: int, n_rel: int) -> List[int]:
             slots.append(x)
             seen.add(x)
 
-    # Force exactly n_rel
     if len(slots) < n_rel:
         for x in range(1, topk + 1):
             if x not in seen:
@@ -78,7 +76,6 @@ def ollama_pick_slots(model: str, prompt: str) -> List[int]:
         "model": model,
         "prompt": prompt,
         "stream": False,
-        # Ask for JSON, but don't *trust* it blindly.
         "format": "json",
         "options": {"temperature": 0.0},
         "keep_alive": "5m",
@@ -114,7 +111,6 @@ def main() -> None:
 
     con = duckdb.connect(str(db_path))
 
-    # Ensure table exists (minimal but necessary)
     con.execute(
         """
         CREATE TABLE IF NOT EXISTS ollama_picks (
@@ -128,7 +124,6 @@ def main() -> None:
         """
     )
 
-    # Rerun-safe for the same model+prompt version
     con.execute("DELETE FROM ollama_picks WHERE model = ? AND prompt_v = ?", [args.model, args.prompt_v])
 
     qids = [
@@ -163,7 +158,6 @@ def main() -> None:
         prompt = build_prompt(query_text, int(n_rel), rows, args.text_chars)
 
         slots = ollama_pick_slots(args.model, prompt)
-        # Enforce validity + exact count, even if JSON is messy
         slots = parse_slots_loose(str({"slots": slots}), topk=topk, n_rel=int(n_rel))
 
         slot_to_doc = {slot: doc_id for slot, doc_id, _title, _text in rows}

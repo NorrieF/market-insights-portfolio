@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS qrels (
   iteration VARCHAR
 );
 
--- Optional: helpful indexes
 CREATE INDEX IF NOT EXISTS idx_docs_doc_id     ON docs(doc_id);
 CREATE INDEX IF NOT EXISTS idx_queries_query_id ON queries(query_id);
 CREATE INDEX IF NOT EXISTS idx_qrels_query_id   ON qrels(query_id);

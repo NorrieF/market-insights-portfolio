@@ -1,8 +1,4 @@
 -- Build judge_set = (all positive qrels) + (BM25 fill) up to TOPK per query.
--- Requires:
---   - docs, queries, qrels already loaded
---   - candidates already built (BM25 topN per query)
---
 -- Placeholder: {{TOPK}} is replaced by the python script.
 
 CREATE TABLE IF NOT EXISTS judge_set (

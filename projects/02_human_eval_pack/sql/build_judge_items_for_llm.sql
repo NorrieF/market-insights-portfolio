@@ -1,6 +1,3 @@
--- Materialize the LLM input "packet" as a TABLE (snapshot)
--- Includes: query_text + n_rel + K candidates (doc title/text), but DOES NOT include source.
-
 CREATE OR REPLACE TABLE judge_items_for_llm AS
 WITH rel_counts AS (
   SELECT

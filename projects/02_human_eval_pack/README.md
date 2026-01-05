@@ -1,6 +1,6 @@
-# Project 2: Human Eval Pack (SciFact) — Human Evaluation vs Ollama (with BM25 Candidate Pool)
+# Project 2: Human Eval Pack — Human Evaluation vs LLM Judgement
 
-## Data we use (what’s actually inside SciFact)
+## Data we use: SciFact
 
 This project uses **BEIR / SciFact**, which is a public benchmark for **scientific claim verification** and **information retrieval**.
 
@@ -43,7 +43,7 @@ In this project we treat:
 - `relevance > 0` as **human-labeled relevant**  
 (SciFact’s relevance is effectively binary for our usage here.)
 
-### 4) What we build from that data (for judging)
+### 4) Data engineering for LLM judgement
 Because judging every doc (5,183) per query would be expensive, we build a **per-query candidate pool** of size `K`:
 
 - Always include **all human-labeled relevant docs** for that query
@@ -58,7 +58,7 @@ This produces:
 Then we create a denormalized view for Ollama prompts:
 - `judge_items_for_llm(query_id, query_text, n_rel, doc_id, title, text, slot)`
 
-### 5) What Ollama outputs
+### 5) Ollama outputs
 For each query, we tell Ollama:
 - The claim (query_text)
 - The `K` candidate docs (title + abstract text)
@@ -132,7 +132,7 @@ Loaded counts (`test` run):
 
 ---
 
-## Why we use BM25 at all
+## The role BM25 plays
 BM25 isn’t the star. It’s the *bouncer at the club door* 🕶️:
 
 - It creates a **small, plausible set of candidate docs per query**
@@ -160,21 +160,21 @@ This design:
 
 ---
 
-## Evaluation taxonomy (plain-English)
+## Evaluation taxonomy
 
-### Human judgments
+### Human Evaluation
 **Human evaluation** = labels created by people who reviewed a query and a document and decided whether the document is relevant.
 
 - **Human-labeled relevant**: a doc a human marked relevant for a query
 - **Not labeled by humans**: a doc with no human label (often “not evaluated,” not “confirmed irrelevant”)
 
-### Candidate pool
+### Candidate Pool
 Because we can’t ask the LLM to judge every doc, we build a small per-query pool:
 
 - **Candidate pool**: the K docs shown to the LLM for a given query
 - **Pool size (K)**: how many docs per query (default 10)
 
-### LLM output
+### LLM Judgement
 For each query, the LLM sees:
 - the query
 - the K candidate docs (title + text)
@@ -183,7 +183,7 @@ For each query, the LLM sees:
 The LLM returns:
 - **LLM-selected relevant docs**: which items it believes are relevant (returned as pool slots, mapped back to doc_ids)
 
-### Comparison outcomes (who picked what)
+### Comparison Outcomes
 Each doc in the pool falls into one of these buckets:
 
 - **Agreement on relevant**  
@@ -200,9 +200,9 @@ Each doc in the pool falls into one of these buckets:
 
 ---
 
-## Metrics and outputs
+## Metrics and Outputs
 
-### Retrieval baseline (BM25 vs human labels)
+### Retrieval Baseline (BM25 vs Human Labels)
 Classic IR metrics for BM25 top-K against human-labeled positives:
 - **Recall@10**  
   `(# human positives retrieved in top10) / (# human positives total)`
@@ -213,7 +213,7 @@ Outputs:
 - `projects/02_human_eval_pack/outputs/eval_per_query.csv`
 - `projects/02_human_eval_pack/outputs/eval_summary.csv`
 
-### LLM judge evaluation (Ollama vs human labels)
+### LLM Judge Evaluation (Ollama vs Human Labels)
 Ollama is told `n_rel` and must return exactly that many pool **slots** from the K-sized pool.
 We then compare its picks to human-labeled positives to compute:
 - per-query recall of human-labeled positives
@@ -222,15 +222,15 @@ We then compare its picks to human-labeled positives to compute:
 
 ---
 
-## Results so far (Ollama's judgement may vary across trials)
+## Results (Ollama's judgement might vary across trials)
 
-### BM25 retrieval baseline
+### BM25 Retrieval Baseline
 BM25 retrieval on SciFact test split (top 10 per query):
 - **Avg Recall@10:** `0.8209`
 - **Avg MRR@10:** `0.6321`
 - **Queries evaluated:** `300`
 
-### Ollama judge
+### Ollama Judge
 Ollama judge (`llama3.1:8b`, `prompt_v=v1`) on `judge_set` with `K=10`:
 - picks written: **339** (exactly matches total human-labeled positives across all queries)
 - pick agreement with human-labeled positives: **45 / 339 ≈ 13.3%** 
@@ -247,7 +247,7 @@ To get an intuitive feel for why Ollama disagrees with human evaluation, we insp
 - humans labeled exactly **1** relevant doc in the pool, and
 - Ollama selected a different doc (a missed-positive case)
 
-**Summary of what we saw (one sentence each):**
+**Summary of what we saw (one sentemaynce each):**
 1) **Query 1 (0-dimensional biomaterials...)**: the human-labeled doc is only loosely related (nanotech + stem cells), while Ollama’s pick directly discusses stem-cell properties and mechanisms, matching the “inductive properties” vibe better.
 2) **Query 3 (1,000 genomes project...)**: the human-labeled doc is highly specific to synthetic associations/rare variants, while Ollama’s pick is a broad overview; humans likely rewarded specificity, Ollama rewarded topical overlap.
 3) **Query 5 (PrP positivity prevalence...)**: the human-labeled doc is a large-scale prevalence survey (exactly the claim), while Ollama picked a transfusion case report; Ollama latched onto vCJD but missed the prevalence framing.

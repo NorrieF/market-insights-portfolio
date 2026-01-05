@@ -8,7 +8,6 @@ def script_dir(from_file: str | Path) -> Path:
 
 
 def project_dir(from_file: str | Path) -> Path:
-    # .../project/scripts/<script>.py  ->  .../project
     return script_dir(from_file).parent
 
 
@@ -21,5 +20,4 @@ def read_sql(from_file: str | Path, filename: str) -> str:
 
 
 def repo_root(from_file: str | Path) -> Path:
-    # .../repo/projects/<project>/scripts/<script>.py  ->  .../repo
     return project_dir(from_file).parent.parent
