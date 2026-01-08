@@ -72,10 +72,10 @@ market-insights-portfolio/
 
 ### Project 2: Human Eval Pack (BEIR SciFact)
 **Goal:** Build a reproducible evaluation loop that compares human relevance labels with an LLM judge:
-- load the benchmark dataset (documents, queries, human labels),
-- build a per-query candidate pool (BM25 via DuckDB full-text search),
-- compute retrieval metrics (Recall@10, MRR@10),
-- run an Ollama model to judge relevance on the same pool and compare outputs.
+- Load the benchmark dataset (documents, queries, human labels),
+- Build a per-query candidate pool (BM25 via DuckDB full-text search),
+- Compute retrieval metrics (Recall@10, MRR@10),
+- Run an Ollama model to judge relevance on the same pool and compare outputs.
 
 ➡️ See: [projects/02_human_eval_pack/README.md](https://github.com/NorrieF/market-insights-portfolio/blob/main/projects/02_human_eval_pack/README.md)
 

@@ -162,18 +162,6 @@ This design:
 
 ## Evaluation taxonomy
 
-### Human Evaluation
-**Human evaluation** = labels created by people who reviewed a query and a document and decided whether the document is relevant.
-
-- **Human-labeled relevant**: a doc a human marked relevant for a query
-- **Not labeled by humans**: a doc with no human label (often “not evaluated,” not “confirmed irrelevant”)
-
-### Candidate Pool
-Because we can’t ask the LLM to judge every doc, we build a small per-query pool:
-
-- **Candidate pool**: the K docs shown to the LLM for a given query
-- **Pool size (K)**: how many docs per query (default 10)
-
 ### LLM Judgement
 For each query, the LLM sees:
 - the query
@@ -247,7 +235,7 @@ To get an intuitive feel for why Ollama disagrees with human evaluation, we insp
 - humans labeled exactly **1** relevant doc in the pool, and
 - Ollama selected a different doc (a missed-positive case)
 
-**Summary of what we saw (one sentemaynce each):**
+**Summary of what we saw:**
 1) **Query 1 (0-dimensional biomaterials...)**: the human-labeled doc is only loosely related (nanotech + stem cells), while Ollama’s pick directly discusses stem-cell properties and mechanisms, matching the “inductive properties” vibe better.
 2) **Query 3 (1,000 genomes project...)**: the human-labeled doc is highly specific to synthetic associations/rare variants, while Ollama’s pick is a broad overview; humans likely rewarded specificity, Ollama rewarded topical overlap.
 3) **Query 5 (PrP positivity prevalence...)**: the human-labeled doc is a large-scale prevalence survey (exactly the claim), while Ollama picked a transfusion case report; Ollama latched onto vCJD but missed the prevalence framing.
@@ -340,6 +328,9 @@ Verify the local API:
     ollama --version
     ollama pull llama3.1:8b
     ollama run llama3.1:8b "Say hello in one sentence."
+```
+Verify the local API:
+```bash
     curl -s http://localhost:11434/api/tags | head
 ```
 
@@ -352,7 +343,7 @@ Verify the local API:
     ollama pull llama3.1:8b
     ollama run llama3.1:8b "Say hello in one sentence."
 ```
-Verify the local API (PowerShell):
+Verify the local API:
 ```bash
     curl http://localhost:11434/api/tags
 ```
