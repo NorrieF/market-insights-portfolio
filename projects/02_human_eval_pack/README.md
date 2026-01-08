@@ -268,28 +268,19 @@ From repo root:
 # 1) Load SciFact into DuckDB (docs + queries + human labels)
 uv run python projects/02_human_eval_pack/scripts/etl_beir_scifact.py
 
-# 2) Create / reset eval tables (used by BM25 metrics)
-uv run python projects/02_human_eval_pack/scripts/init_eval_tables.py
-
-# 3) Create / reset Ollama tables (stores LLM picks/scores)
-uv run python projects/02_human_eval_pack/scripts/init_ollama_tables.py
-
-# 4) Build BM25 candidates (topK per query)
+# 2) Build BM25 candidates (topK per query)
 uv run python projects/02_human_eval_pack/scripts/build_candidates.py
 
-# 5) Build the shared judge pool (all human positives + BM25 fill up to K)
+# 3) Build denormalized prompt rows for the LLM judge
 uv run python projects/02_human_eval_pack/scripts/build_judge_set.py
 
-# 6) Build denormalized prompt rows for the LLM judge
-uv run python projects/02_human_eval_pack/scripts/build_judge_items_for_llm.py
-
-# 7) (optional) Baseline retrieval metrics for BM25 (writes CSV outputs)
+# 4) (optional) Baseline retrieval metrics for BM25 (writes CSV outputs)
 uv run python projects/02_human_eval_pack/scripts/eval_metrics.py
 
-# 8) Run Ollama judging (requires Ollama running locally and model pulled)
+# 5) Run Ollama judging (requires Ollama running locally and model pulled)
 uv run python projects/02_human_eval_pack/scripts/run_ollama_judge.py --model llama3.1:8b
 
-# 9) (optional) Export inspection examples (writes CSV to outputs/)
+# 6) Export inspection examples (writes CSV to outputs/)
 uv run python projects/02_human_eval_pack/scripts/export_inspection_rows.py
 ```
 

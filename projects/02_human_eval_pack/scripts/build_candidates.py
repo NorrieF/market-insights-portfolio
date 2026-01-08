@@ -6,7 +6,7 @@ from pathlib import Path
 import duckdb
 from tqdm import tqdm
 
-from shared.scripts.repo_paths import repo_root
+from shared.scripts.repo_paths import repo_root, read_sql
 
 
 def main() -> None:
@@ -21,18 +21,7 @@ def main() -> None:
 
     con = duckdb.connect(str(db_path))
 
-    # FTS setup
-    con.execute("INSTALL fts;")
-    con.execute("LOAD fts;")
-    con.execute("""
-        PRAGMA create_fts_index(
-          'docs', 'doc_id', 'title', 'text',
-          overwrite = 1
-        );
-    """)
-
-    # Reset candidates
-    con.execute("DELETE FROM candidates;")
+    con.execute(read_sql(__file__, "build_candidates.sql"))
 
     queries = con.execute("SELECT query_id, text FROM queries ORDER BY query_id").fetchall()
 

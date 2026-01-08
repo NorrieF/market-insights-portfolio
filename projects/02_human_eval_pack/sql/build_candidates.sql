@@ -1,33 +1,24 @@
 INSTALL fts;
 LOAD fts;
 
--- Always rebuild the index (FTS indexes do not auto-update when data changes).
+-- Always rebuild (idempotent)
+
 PRAGMA create_fts_index(
-  'docs', 'doc_id', 'title', 'text',
+  'docs',      -- input_table (qualified)
+  'doc_id',         -- input_id
+  'title', 'text',  -- fields to index
   overwrite = 1
 );
 
+CREATE TABLE IF NOT EXISTS candidates (
+  query_id VARCHAR,
+  doc_id   VARCHAR,
+  rank     INTEGER,
+  source   VARCHAR
+);
+
+-- candidates table is rebuilt every run
 DELETE FROM candidates;
 
-WITH scored AS (
-  SELECT
-    q.query_id,
-    d.doc_id,
-    fts_main_docs.match_bm25(d.doc_id, q.text) AS score
-  FROM queries q
-  CROSS JOIN docs d
-),
-filtered AS (
-  SELECT * FROM scored WHERE score IS NOT NULL
-),
-ranked AS (
-  SELECT
-    query_id,
-    doc_id,
-    row_number() OVER (PARTITION BY query_id ORDER BY score DESC) AS rank
-  FROM filtered
-)
-INSERT INTO candidates(query_id, doc_id, rank, source)
-SELECT query_id, doc_id, rank, 'bm25'
-FROM ranked
-WHERE rank <= 10;
+CREATE INDEX IF NOT EXISTS idx_candidates_qid ON candidates(query_id);
+CREATE INDEX IF NOT EXISTS idx_candidates_doc ON candidates(doc_id);

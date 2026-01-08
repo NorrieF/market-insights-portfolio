@@ -11,7 +11,7 @@ import duckdb
 import requests
 from tqdm import tqdm
 
-from shared.scripts.repo_paths import repo_root
+from shared.scripts.repo_paths import repo_root, read_sql
 
 
 Row = Tuple[int, str, str, str]  # slot, doc_id, title, text
@@ -110,20 +110,7 @@ def main() -> None:
     db_path = db_arg if db_arg.is_absolute() else (root / db_arg)
 
     con = duckdb.connect(str(db_path))
-
-    con.execute(
-        """
-        CREATE TABLE IF NOT EXISTS ollama_picks (
-          query_id   VARCHAR,
-          slot       INTEGER,
-          doc_id     VARCHAR,
-          model      VARCHAR,
-          prompt_v   VARCHAR,
-          created_at TIMESTAMP DEFAULT now()
-        );
-        """
-    )
-
+    con.execute(read_sql(__file__, "schema_ollama.sql"))
     con.execute("DELETE FROM ollama_picks WHERE model = ? AND prompt_v = ?", [args.model, args.prompt_v])
 
     qids = [

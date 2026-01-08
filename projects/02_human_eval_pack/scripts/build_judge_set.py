@@ -18,6 +18,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", default="data/beir_scifact.duckdb")
     ap.add_argument("--topk", type=int, default=10)
+    ap.add_argument("--table", default="judge_items_for_llm")
+
     args = ap.parse_args()
 
     root = repo_root(__file__)
@@ -28,12 +30,17 @@ def main() -> None:
 
     sql = read_sql(__file__, "build_judge_set.sql")
     sql = sql.replace("{{TOPK}}", str(int(args.topk)))
-
     run_sql_script(con, sql)
 
     n = con.execute("SELECT COUNT(*) FROM judge_set").fetchone()[0]
     nq = con.execute("SELECT COUNT(DISTINCT query_id) FROM judge_set").fetchone()[0]
     print(f"Done. judge_set={n:,} rows across {nq:,} queries (topk={args.topk}) db={db_path}")
+
+    sql2 = read_sql(__file__, "build_judge_items_for_llm.sql")
+    run_sql_script(con, sql2)
+
+    n = con.execute(f"SELECT COUNT(*) FROM {args.table}").fetchone()[0]
+    print(f"Done. {args.table}={n:,} rows db={db_path}")
 
     con.execute("CHECKPOINT;")
     con.close()
