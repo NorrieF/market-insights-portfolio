@@ -1,8 +1,6 @@
 INSTALL fts;
 LOAD fts;
 
--- Always rebuild (idempotent)
-
 PRAGMA create_fts_index(
   'docs',      -- input_table (qualified)
   'doc_id',         -- input_id
@@ -17,7 +15,6 @@ CREATE TABLE IF NOT EXISTS candidates (
   source   VARCHAR
 );
 
--- candidates table is rebuilt every run
 DELETE FROM candidates;
 
 CREATE INDEX IF NOT EXISTS idx_candidates_qid ON candidates(query_id);

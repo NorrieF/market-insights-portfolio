@@ -2,11 +2,8 @@ from __future__ import annotations
 
 import argparse
 import csv
-from pathlib import Path
 
-import duckdb
-
-from shared.scripts.repo_paths import repo_root, read_sql
+from shared.scripts.repo_paths import read_sql, connect_duckdb, ensure_outpath
 
 
 def main() -> None:
@@ -21,17 +18,10 @@ def main() -> None:
     )
     args = ap.parse_args()
 
-    root = repo_root(__file__)
-    db_path = Path(args.db)
-    db_path = db_path if db_path.is_absolute() else (root / db_path)
-
-    out_path = Path(args.out)
-    out_path = out_path if out_path.is_absolute() else (root / out_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    con = duckdb.connect(str(db_path))
-
+    out_path = ensure_outpath(__file__, args.out)
     sql = read_sql(__file__, "export_inspection.sql")
+
+    con = connect_duckdb(__file__, args.db)
 
     rows = con.execute(sql, [args.model, args.limit]).fetchall()
     con.close()

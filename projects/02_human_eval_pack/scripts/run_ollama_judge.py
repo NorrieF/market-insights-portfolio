@@ -4,14 +4,12 @@ import argparse
 import json
 import re
 import time
-from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-import duckdb
 import requests
 from tqdm import tqdm
 
-from shared.scripts.repo_paths import repo_root, read_sql
+from shared.scripts.repo_paths import read_sql, connect_duckdb
 
 
 Row = Tuple[int, str, str, str]  # slot, doc_id, title, text
@@ -105,11 +103,8 @@ def main() -> None:
     ap.add_argument("--sleep", type=float, default=0.02, help="Small pause per query to reduce load")
     args = ap.parse_args()
 
-    root = repo_root(__file__)
-    db_arg = Path(args.db)
-    db_path = db_arg if db_arg.is_absolute() else (root / db_arg)
+    con = connect_duckdb(__file__, args.db)
 
-    con = duckdb.connect(str(db_path))
     con.execute(read_sql(__file__, "schema_ollama.sql"))
     con.execute("DELETE FROM ollama_picks WHERE model = ? AND prompt_v = ?", [args.model, args.prompt_v])
 

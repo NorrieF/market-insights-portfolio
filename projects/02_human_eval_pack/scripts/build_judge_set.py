@@ -1,17 +1,8 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
-import duckdb
-
-from shared.scripts.repo_paths import repo_root, read_sql
-
-
-def run_sql_script(con: duckdb.DuckDBPyConnection, sql: str) -> None:
-    for stmt in (s.strip() for s in sql.split(";")):
-        if stmt:
-            con.execute(stmt)
+from shared.scripts.repo_paths import read_sql, connect_duckdb
 
 
 def main() -> None:
@@ -21,26 +12,21 @@ def main() -> None:
     ap.add_argument("--table", default="judge_items_for_llm")
 
     args = ap.parse_args()
-
-    root = repo_root(__file__)
-    db_arg = Path(args.db)
-    db_path = db_arg if db_arg.is_absolute() else (root / db_arg)
-
-    con = duckdb.connect(str(db_path))
+    con = connect_duckdb(__file__, args.db)
 
     sql = read_sql(__file__, "build_judge_set.sql")
     sql = sql.replace("{{TOPK}}", str(int(args.topk)))
-    run_sql_script(con, sql)
+    con.execute(sql)
 
     n = con.execute("SELECT COUNT(*) FROM judge_set").fetchone()[0]
     nq = con.execute("SELECT COUNT(DISTINCT query_id) FROM judge_set").fetchone()[0]
-    print(f"Done. judge_set={n:,} rows across {nq:,} queries (topk={args.topk}) db={db_path}")
+    print(f"Done. judge_set={n:,} rows across {nq:,} queries (topk={args.topk})")
 
     sql2 = read_sql(__file__, "build_judge_items_for_llm.sql")
-    run_sql_script(con, sql2)
+    con.execute(sql2)
 
     n = con.execute(f"SELECT COUNT(*) FROM {args.table}").fetchone()[0]
-    print(f"Done. {args.table}={n:,} rows db={db_path}")
+    print(f"Done. {args.table}={n:,} rows")
 
     con.execute("CHECKPOINT;")
     con.close()

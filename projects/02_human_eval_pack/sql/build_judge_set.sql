@@ -44,7 +44,7 @@ fill AS (
     c.doc_id,
     row_number() OVER (
       PARTITION BY c.query_id
-      ORDER BY c.rank, c.doc_id
+      ORDER BY c.rank
     ) AS fill_rn,
     pc.n_pos
   FROM candidates c

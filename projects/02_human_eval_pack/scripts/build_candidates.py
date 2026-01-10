@@ -1,25 +1,19 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
-import duckdb
 from tqdm import tqdm
 
-from shared.scripts.repo_paths import repo_root, read_sql
+from shared.scripts.repo_paths import read_sql, connect_duckdb
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", default="data/beir_scifact.duckdb")
     ap.add_argument("--topk", type=int, default=10)
+
     args = ap.parse_args()
-
-    root = repo_root(__file__)
-    db_arg = Path(args.db)
-    db_path = db_arg if db_arg.is_absolute() else (root / db_arg)
-
-    con = duckdb.connect(str(db_path))
+    con = connect_duckdb(__file__, args.db)
 
     con.execute(read_sql(__file__, "build_candidates.sql"))
 
@@ -49,7 +43,7 @@ def main() -> None:
     )
 
     n = con.execute("SELECT COUNT(*) FROM candidates").fetchone()[0]
-    print(f"Done. candidates={n:,} db={db_path}")
+    print(f"Done. candidates={n:,}")
 
     con.execute("CHECKPOINT;")
     con.close()
